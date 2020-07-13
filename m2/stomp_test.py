@@ -171,9 +171,12 @@ def try_ws():
         )
         print("open!")
 
-        while True:
-            result =  ws.recv()
-            print("Received '%s'" % result)
+        c1 = build_stomp_command("CONNECT", {"host": "ise24.abc.inc"})
+        ws.send(c1)
+        time.sleep(2)
+
+        result = ws.recv()
+        print("Received " + result)
     except Exception as exc:
         print(exc)
     finally:
