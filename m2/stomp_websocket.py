@@ -2,30 +2,36 @@
 
 """
 Author: Nick Russo
-Purpose:
-https://github.com/cisco-pxgrid/pxgrid-rest-ws/wiki/pxGrid-Provider
+Purpose: Create a child WebSocketApp that is specific to PxGrid using
+STOMP to subscribe to a topic, printing each message as it arrives.
 """
 
 import websocket
 import time
 
 
-class PxGridWebsocket(websocket.WebSocketApp):
+class StompWebsocket(websocket.WebSocketApp):
+    """
+    Extends WebSocketApp to add STOMP-specific functionality for PxGrid.
+    """
 
     def __init__(self, ws_url, header, sslopt):
-        websocket.enableTrace(True)
+        """
+        """
+        # Low-level debugging can be helpful for development, but sloppy
+        # websocket.enableTrace(True)
+
         super().__init__(
             ws_url, 
-            on_message=PxGridWebsocket._on_message,
-            on_error=PxGridWebsocket._on_error,
-            on_close=PxGridWebsocket._on_close,
-            on_open=PxGridWebsocket._on_open,
+            on_message=StompWebsocket._on_message,
+            on_error=StompWebsocket._on_error,
+            on_close=StompWebsocket._on_close,
+            on_open=StompWebsocket._on_open,
             header=header,
         )
         self.sslopt = sslopt
 
     def start(self, pub_node, topic):
-        #self.op_open = PxGridWebsocket._on_open
         self.pub_node = pub_node
         self.topic = topic
         self.run_forever(sslopt=self.sslopt)
@@ -42,31 +48,41 @@ class PxGridWebsocket(websocket.WebSocketApp):
         # Add newline and null terminator to signify end of command
         text += "\n\0"
 
-        # Print status message, issue command, and wait. More advanced
-        # async techniques are more robust, but out of scope
-        # print(f"Sending STOMP command:\n{text}")
-        byte_text = text.encode("utf-8")
-        print(f"Sending STOMP bytes: {byte_text}")
+        # Print status message so we can see the STOMP exchanges
+        print(f">> {text}")
 
-        # Very important to set BINARY mode (hint buried in pxGrid docs)
-        self.send(byte_text, opcode=websocket.ABNF.OPCODE_BINARY)
+        # Very important to set BINARY mode with UTF-8 (buried in pxGrid docs)
+        self.send(text.encode("utf-8"), opcode=websocket.ABNF.OPCODE_BINARY)
         time.sleep(1)
 
 
     @staticmethod
     def _on_message(ws, message):
-        print(f"Received message bytes: {message}")
+        """
+        Print all received messages preceeded by <<
+        """
+        print(f"<< {message.decode('utf-8')}")
 
     @staticmethod
     def _on_error(ws, error):
-        print(f"Received error bytes: {error}")
+        """
+        Print all received errors  preceeded by <!
+        """
+        print(f"<! {error.decode('utf-8')}")
 
     @staticmethod
     def _on_close(ws):
+        """
+        Notify user that websocket is closed
+        """
         print("websocket closed")
 
     @staticmethod
     def _on_open(ws):
+        """
+        Notify user that websocket is open, then issue the appropriate STOMP
+        CONNECT and SUBSCRIBE commands
+        """
         print("websocket opened")
 
         # https://stomp.github.io/stomp-specification-1.2.html

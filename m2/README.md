@@ -22,3 +22,7 @@ Describe the capabilities and components of the Cisco ISE API
 Describe the capabilities and components of the Cisco pxGrid API
 Construct a Python script for pxGrid to retrieve information such as endpoint device type, network policy and security telemetry
 ```
+
+
+Sending STOMP bytes: b'CONNECT\naccept-version:1.2\nhost:ise-pubsub-ise24\n\n\x00'
+Sending STOMP bytes: b'SUBSCRIBE\ndestination:/topic/com.cisco.ise.radius.failure\nid:0\n\n\x00'

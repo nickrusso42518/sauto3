@@ -10,8 +10,14 @@ from base64 import b64encode
 import ssl
 import time
 import requests
-from pxgrid_websocket import PxGridWebsocket
+from stomp_websocket import StompWebsocket
 
+# Identify the proper dict key for each type of service
+TOPIC_MAP = {
+    "com.cisco.ise.radius": "failureTopic",
+    "com.cisco.ise.session": "sessionTopic",
+    "com.cisco.ise.trustsec": "policyDownloadTopic",
+}
 
 class PxGrid:
     def __init__(self, ise_host, verify=False):
@@ -23,8 +29,7 @@ class PxGrid:
 
         # Create a long-lived TCP session for HTTP requests, plus base URL
         self.sess = requests.session()
-        self.ise_host = ise_host
-        self.base_url = f"https://{self.ise_host}:8910/pxgrid/control"
+        self.base_url = f"https://{ise_host}:8910/pxgrid/control"
         self.auth = None
 
         # Define generic send/receive JSON headers for HTTP
@@ -59,7 +64,7 @@ class PxGrid:
         # If the response has an HTTP body, return Python objects from it
         if resp.text:
             # Optional debugging line to see the HTTP responses
-            # import json; print(json.dumps(resp.json(), indent=2))
+            import json; print(json.dumps(resp.json(), indent=2))
             return resp.json()
 
         # No body; just return empty dict for consistency
@@ -84,6 +89,7 @@ class PxGrid:
 
         # Build the HTTP basic auth 2-tuple for future requests
         self.auth = (self.username, acct["password"])
+        print(self.auth)
 
         # User creation successful; print status message
         print(f"PxGrid user {username} created. Please approve via ISE UI")
@@ -106,14 +112,14 @@ class PxGrid:
 
         print(f"PxGrid user {username} activated")
 
-    def subscribe(self, service):
+    def authorize_for_service(self, service, ws_subscribe=False):
 
         # First, lookup the service name to determine two things:
         # The pubsub service, which provides the ws URL and nodename
         # The session topic, which is used for signaling interest
         serv_resp = self.lookup_service(service)["services"][0]
         pubsub = serv_resp["properties"]["wsPubsubService"]
-        topic = serv_resp["properties"]["sessionTopic"]
+        topic = serv_resp["properties"][TOPIC_MAP[service]]
 
         # Next, look up the pubsub service to get nodeName and websocket URL
         serv_resp = self.lookup_service(pubsub)
@@ -123,24 +129,29 @@ class PxGrid:
         # specific ISE node publisher
         secret_resp = self.req("AccessSecret", json={"peerNodeName": pub_node})
 
-        # Extract the secret and manually build the HTTP basic auth base 64
-        # encoded string, since websockets isn't as user-friendly as requests
+        # Extract and store the secret text
         self.secret = secret_resp["secret"]
-        b64 = b64encode((f"{self.username}:{self.secret}").encode()).decode()
+        print(self.secret)
 
-        # Create the websocket headers and URL for use with STOMP later
-        self.ws_headers = {"Authorization": f"Basic {b64}"}
-        self.ws_url = serv_resp["services"][0]["properties"]["wsUrl"]
+        # If we are performing a websocket subscription
+        if ws_subscribe:
 
-        # Connect to ISE using a websocket
-        self.ws = PxGridWebsocket(
-            self.ws_url,
-            sslopt={"cert_reqs": ssl.CERT_NONE},
-            header=self.ws_headers,
-        )
+            # Manually build the HTTP basic auth base 64 encoded string,
+            # since websockets isn't as user-friendly as requests
+            b64 = b64encode((f"{self.username}:{self.secret}").encode()).decode()
 
-        # Start the ws app on a given node and subscribing to the proper topic
-        self.ws.start(pub_node, topic)
+            # Create the websocket headers and URL for use with STOMP later
+            self.ws_headers = {"Authorization": f"Basic {b64}"}
+            self.ws_url = serv_resp["services"][0]["properties"]["wsUrl"]
+
+            # Connect to ISE using a websocket
+            self.ws = StompWebsocket(
+                self.ws_url,
+                sslopt={"cert_reqs": ssl.CERT_NONE},
+                header=self.ws_headers,
+            )
+            # Start the ws app on a given node and subscribing to the proper topic
+            self.ws.start(pub_node, topic)
 
 
 def main():
@@ -148,11 +159,12 @@ def main():
     Execution begins here.
     """
 
-    # IP address is 10.10.20.70
-    pxgrid = PxGrid("ise24.abc.inc")
+    # Instantiate a new PxGrid object to the DevNet sandbox
+    pxgrid = PxGrid("10.10.20.70")
 
-    pxgrid.activate_user("nick")
-    pxgrid.subscribe("com.cisco.ise.session")
+    # Activate a new user for this integration
+    pxgrid.activate_user("globo_listen")
+    pxgrid.authorize_for_service("com.cisco.ise.radius", ws_subscribe=True)
 
 
 if __name__ == "__main__":
