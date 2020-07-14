@@ -11,6 +11,7 @@ import ssl
 import time
 import requests
 from websocket import create_connection
+from pxgrid_websocket import PxGridWebsocket
 
 
 class PxGrid:
@@ -60,35 +61,6 @@ class PxGrid:
         serv_resp = self.req("ServiceLookup", json={"name": service_name})
         return serv_resp
 
-    def send_stomp_command(self, command, headers=None, body=None):
-
-        # The command text goes first, followed by a newline
-        text = f"{command}\n"
-
-        # If headers exist, print in "key:value" format on separate lines
-        if headers:
-            for key, value in headers.items():
-                text += f"{key}:{value}\n"
-
-        # Forced newline to separate command/headers from body
-        text += "\n"
-
-        # If body exists, append to text
-        if body:
-            text += body
-
-        # Add null terminator to signify end of command
-        text += "\0"
-
-        # Print status message, issue command, and wait. More advanced
-        # async techniques are more robust, but out of scope
-        print(f"Sending STOMP command:\n{text}")
-        self.ws.send(text)
-        time.sleep(10)
-
-        # Return whatever response data was seen in response
-        return self.ws.recv()
-
     #
     # User/connection initialization
     #
@@ -126,13 +98,13 @@ class PxGrid:
 
         print(f"PxGrid user {username} activated")
 
-    def stomp_connect(self):
-        """
-        Not everyone wants to subscribe to security feeds via STOMP.
-        """
+    def subscribe(self, service):
+        serv_resp = self.lookup_service(service)["services"][0]
+        pubsub = serv_resp["properties"]["wsPubsubService"]
+        topic = serv_resp["properties"]["sessionTopic"]
 
         # Next, look up the pubsub service to get nodeName and websocket URL
-        serv_resp = self.lookup_service("com.cisco.ise.pubsub")
+        serv_resp = self.lookup_service(pubsub)
         pub_node = serv_resp["services"][0]["nodeName"]
 
         # Issue POST request to generate secret between consumer (us) and
@@ -148,23 +120,21 @@ class PxGrid:
         self.ws_headers = {"Authorization": f"Basic {b64}"}
         self.ws_url = serv_resp["services"][0]["properties"]["wsUrl"]
 
-        try:
+        # Connect to ISE using a websocket
+        if False:
             self.ws = create_connection(
                 self.ws_url,
                 header=self.ws_headers,
                 sslopt={"cert_reqs": ssl.CERT_NONE},
             )
 
-            # Issue STOMP CONNECT message with host header targeting ISE node
-            rx = self.send_stomp_command("CONNECT", {"host": self.ise_host})
-            print(f"Received: {rx}")
-
-        except Exception as exc:
-            print(f"websocket exception raised: {exc}")
-            raise
-        finally:
-            self.ws.close()
-            print(f"websocket connect to {self.ise_host} closed")
+        #import pdb; pdb.set_trace()
+        self.ws = PxGridWebsocket(
+            self.ws_url,
+            sslopt={"cert_reqs": ssl.CERT_NONE},
+            header=self.ws_headers,
+        )
+        self.ws.start(self.ise_host, topic)
 
 
 def main():
@@ -175,10 +145,8 @@ def main():
     # IP address is 10.10.20.70
     pxgrid = PxGrid("ise24.abc.inc")
 
-    pxgrid.activate_user("nick")
-    pxgrid.stomp_connect()
-
-    # pxgrid.subscribe("whatever")
+    pxgrid.activate_user("nick4")
+    pxgrid.subscribe("com.cisco.ise.session")
 
 
 if __name__ == "__main__":
