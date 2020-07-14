@@ -2,7 +2,7 @@
 
 """
 Author: Nick Russo
-Purpose: 
+Purpose:
 https://github.com/cisco-pxgrid/pxgrid-rest-ws/wiki/pxGrid-Provider
 """
 
@@ -10,7 +10,6 @@ from base64 import b64encode
 import ssl
 import time
 import requests
-from websocket import create_connection
 from pxgrid_websocket import PxGridWebsocket
 
 
@@ -39,9 +38,14 @@ class PxGrid:
     #
 
     def req(self, resource, method="post", **kwargs):
+
+        # All requests must have a JSON body, so if this wasn't
+        # supplied, use an empty dict instead
         if not "json" in kwargs:
             kwargs["json"] = {}
 
+        # Issue generic HTTP request by combining relatively fixed
+        # object attributes with arguments from caller
         resp = self.sess.request(
             url=f"{self.base_url}/{resource}",
             method=method,
@@ -52,9 +56,13 @@ class PxGrid:
         )
         resp.raise_for_status()
 
+        # If the response has an HTTP body, return Python objects from it
         if resp.text:
+            # Optional debugging line to see the HTTP responses
+            # import json; print(json.dumps(resp.json(), indent=2))
             return resp.json()
 
+        # No body; just return empty dict for consistency
         return {}
 
     def lookup_service(self, service_name):
@@ -99,6 +107,10 @@ class PxGrid:
         print(f"PxGrid user {username} activated")
 
     def subscribe(self, service):
+
+        # First, lookup the service name to determine two things:
+        # The pubsub service, which provides the ws URL and nodename
+        # The session topic, which is used for signaling interest
         serv_resp = self.lookup_service(service)["services"][0]
         pubsub = serv_resp["properties"]["wsPubsubService"]
         topic = serv_resp["properties"]["sessionTopic"]
@@ -121,20 +133,14 @@ class PxGrid:
         self.ws_url = serv_resp["services"][0]["properties"]["wsUrl"]
 
         # Connect to ISE using a websocket
-        if False:
-            self.ws = create_connection(
-                self.ws_url,
-                header=self.ws_headers,
-                sslopt={"cert_reqs": ssl.CERT_NONE},
-            )
-
-        #import pdb; pdb.set_trace()
         self.ws = PxGridWebsocket(
             self.ws_url,
             sslopt={"cert_reqs": ssl.CERT_NONE},
             header=self.ws_headers,
         )
-        self.ws.start(self.ise_host, topic)
+
+        # Start the ws app on a given node and subscribing to the proper topic
+        self.ws.start(pub_node, topic)
 
 
 def main():
@@ -145,7 +151,7 @@ def main():
     # IP address is 10.10.20.70
     pxgrid = PxGrid("ise24.abc.inc")
 
-    pxgrid.activate_user("nick4")
+    pxgrid.activate_user("nick")
     pxgrid.subscribe("com.cisco.ise.session")
 
 

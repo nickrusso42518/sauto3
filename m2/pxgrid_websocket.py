@@ -1,4 +1,14 @@
+#!/usr/bin/env python
+
+"""
+Author: Nick Russo
+Purpose:
+https://github.com/cisco-pxgrid/pxgrid-rest-ws/wiki/pxGrid-Provider
+"""
+
 import websocket
+import time
+
 
 class PxGridWebsocket(websocket.WebSocketApp):
 
@@ -14,43 +24,42 @@ class PxGridWebsocket(websocket.WebSocketApp):
         )
         self.sslopt = sslopt
 
-    def start(self, ise_host, topic):
+    def start(self, pub_node, topic):
         #self.op_open = PxGridWebsocket._on_open
-        self.ise_host = ise_host
+        self.pub_node = pub_node
         self.topic = topic
         self.run_forever(sslopt=self.sslopt)
 
-    def _send_stomp_command(self, command, headers=None, body=None):
+    def _send_stomp_command(self, command, headers):
 
         # The command text goes first, followed by a newline
         text = f"{command}\n"
 
-        # If headers exist, print in "key:value" format on separate lines
-        if headers:
-            for key, value in headers.items():
-                text += f"{key}:{value}\n"
+        # Print headers in "key:value" format on separate lines
+        for key, value in headers.items():
+            text += f"{key}:{value}\n"
 
-        # If body exists, append to text with leading newline
-        if body:
-            text += f"\n{body}"
-
-        # Add null terminator to signify end of command
-        text += "\0"
+        # Add newline and null terminator to signify end of command
+        text += "\n\0"
 
         # Print status message, issue command, and wait. More advanced
         # async techniques are more robust, but out of scope
-        print(f"Sending STOMP command:\n{text}")
-        self.send(text.encode("utf-8"))
-        #time.sleep(5)
+        # print(f"Sending STOMP command:\n{text}")
+        byte_text = text.encode("utf-8")
+        print(f"Sending STOMP bytes: {byte_text}")
+
+        # Very important to set BINARY mode (hint buried in pxGrid docs)
+        self.send(byte_text, opcode=websocket.ABNF.OPCODE_BINARY)
+        time.sleep(1)
 
 
     @staticmethod
     def _on_message(ws, message):
-        print(f"Message: {message}")
+        print(f"Received message bytes: {message}")
 
     @staticmethod
     def _on_error(ws, error):
-        print(f"Error: {error}")
+        print(f"Received error bytes: {error}")
 
     @staticmethod
     def _on_close(ws):
@@ -60,10 +69,11 @@ class PxGridWebsocket(websocket.WebSocketApp):
     def _on_open(ws):
         print("websocket opened")
 
-        connect_headers = {"host": ws.ise_host, "accept-version": "1.2"}
-        connect_recv = ws._send_stomp_command("CONNECT", connect_headers)
+        # https://stomp.github.io/stomp-specification-1.2.html
+        connect_headers = {"accept-version": "1.2", "host": ws.pub_node}
+        ws._send_stomp_command("CONNECT", connect_headers)
         print("websocket CONNECT complete")
 
-        subscribe_headers = {"destination": ws.topic, "id": "my-id"} 
-        subscribe_rx = ws._send_stomp_command("SUBSCRIBE", subscribe_headers)
+        subscribe_headers = {"destination": ws.topic, "id": "0"}
+        ws._send_stomp_command("SUBSCRIBE", subscribe_headers)
         print("websocket SUBSCRIBE complete")
