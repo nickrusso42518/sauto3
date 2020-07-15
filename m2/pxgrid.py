@@ -37,8 +37,8 @@ class PxGrid:
 
         # Create a long-lived TCP session for HTTP requests, plus base URL
         self.sess = requests.session()
-        self.base_url = f"https://{ise_host}:8910/pxgrid/control"
-        self.auth = None
+        self.control_url = f"https://{ise_host}:8910/pxgrid/control"
+        self.control_auth = None
 
         # Define generic send/receive JSON headers for HTTP/REST
         self.http_headers = {
@@ -50,10 +50,13 @@ class PxGrid:
     # Generic helper methods
     #
 
-    def req(self, resource, method="post", **kwargs):
-        """
-        """
+    def service_req(self, resource, **kwargs):
+        return self._base_req(resource, base_url=self.service_url, auth=self.service_auth, **kwargs)
 
+    def control_req(self, resource, **kwargs):
+        return self._base_req(resource, base_url=self.control_url, auth=self.control_auth, **kwargs)
+
+    def _base_req(self, resource, base_url, method="post", **kwargs):
         # All requests must have a JSON body, so if this wasn't
         # supplied, use an empty dict instead
         if not "json" in kwargs:
@@ -62,10 +65,9 @@ class PxGrid:
         # Issue generic HTTP request by combining relatively fixed
         # object attributes with arguments from caller
         resp = self.sess.request(
-            url=f"{self.base_url}/{resource}",
+            url=f"{base_url}/{resource}",
             method=method,
             headers=self.http_headers,
-            auth=self.auth,
             verify=self.verify,
             **kwargs
         )
@@ -74,15 +76,15 @@ class PxGrid:
         # If the response has an HTTP body, return Python objects from it
         if resp.text:
             # Optional debugging line to see the HTTP responses
-            import json; print(json.dumps(resp.json(), indent=2))
+            # import json; print(json.dumps(resp.json(), indent=2))
             return resp.json()
 
         # No body; just return empty dict for consistency
         return {}
 
     def lookup_service(self, service_name):
-        serv_resp = self.req("ServiceLookup", json={"name": service_name})
-        return serv_resp
+        resp = self.control_req("ServiceLookup", json={"name": service_name})
+        return resp
 
     #
     # User/connection initialization
@@ -95,18 +97,17 @@ class PxGrid:
 
         # Issue a POST request to create a new account with specified username
         # This request does not require authentication
-        acct = self.req("AccountCreate", json={"nodeName": username})
+        acct = self.control_req("AccountCreate", json={"nodeName": username})
 
         # Build the HTTP basic auth 2-tuple for future requests
-        self.auth = (self.username, acct["password"])
-        print(self.auth)
+        self.control_auth = (self.username, acct["password"])
 
         # User creation successful; print status message
         print(f"PxGrid user {username} created. Please approve via ISE UI")
 
         # Loop forever (or until otherwise broken)
         while True:
-            activate = self.req("AccountActivate")
+            activate = self.control_req("AccountActivate")
             account_state = activate["accountState"].lower()
             print(f"Account state: {account_state}")
 
@@ -128,20 +129,28 @@ class PxGrid:
         # The pubsub service, which provides the ws URL and nodename
         # The session topic, which is used for signaling interest
         serv_resp = self.lookup_service(service)["services"][0]
-        pubsub = serv_resp["properties"]["wsPubsubService"]
-        topic = serv_resp["properties"][TOPIC_MAP[service]]
 
-        # Next, look up the pubsub service to get nodeName and websocket URL
-        serv_resp = self.lookup_service(pubsub)
-        pub_node = serv_resp["services"][0]["nodeName"]
+        # If we are performing a websocket subscription
+        if ws_subscribe:
+
+            # Use the TOPIC_MAP to find the correct key, then access value
+            pubsub = serv_resp["properties"]["wsPubsubService"]
+            topic = serv_resp["properties"][TOPIC_MAP[service]]
+
+            # Next, look up the pubsub service to get nodeName
+            serv_resp = self.lookup_service(pubsub)["services"][0]
+
+        else:
+            # Don't care about topic or ws pubsub, just get the REST URL
+            self.service_url = serv_resp["properties"]["restBaseUrl"]
 
         # Issue POST request to generate secret between consumer (us) and
         # specific ISE node publisher
-        secret_resp = self.req("AccessSecret", json={"peerNodeName": pub_node})
+        pub_node = serv_resp["nodeName"]
+        secret_resp = self.control_req("AccessSecret", json={"peerNodeName": pub_node})
 
         # Extract and store the secret text
         self.secret = secret_resp["secret"]
-        print(self.secret)
 
         # If we are performing a websocket subscription
         if ws_subscribe:
@@ -152,7 +161,7 @@ class PxGrid:
 
             # Create the websocket headers and URL for use with STOMP later
             self.ws_headers = {"Authorization": f"Basic {b64}"}
-            self.ws_url = serv_resp["services"][0]["properties"]["wsUrl"]
+            self.ws_url = serv_resp["properties"]["wsUrl"]
 
             # Connect to ISE using a websocket
             self.ws = StompWebsocket(
@@ -162,3 +171,8 @@ class PxGrid:
             )
             # Start the ws app on a given node and subscribing to the proper topic
             self.ws.start(pub_node, topic)
+
+        else:
+
+            # Store the ISE URL and auth for use in future service_req() calls
+            self.service_auth = (self.username, self.secret)

@@ -93,7 +93,7 @@ class StompWebsocket(websocket.WebSocketApp):
         CONNECT and SUBSCRIBE commands. See spec for details:
         https://stomp.github.io/stomp-specification-1.2.html
         """
-        print("** WEBSOCKET CLOSED")
+        print("** WEBSOCKET OPEN")
 
         # Send the CONNECT command with the proper version and pub node
         connect_headers = {"accept-version": "1.2", "host": ws.pub_node}
