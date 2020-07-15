@@ -17,26 +17,41 @@ class StompWebsocket(websocket.WebSocketApp):
 
     def __init__(self, ws_url, header, sslopt):
         """
+        Creates a new websocket with a given URL, header dictionary, and
+        SSL options.
         """
+
         # Low-level debugging can be helpful for development, but sloppy
         # websocket.enableTrace(True)
 
+        # Call the base class constructor to handle the heavy lifting
         super().__init__(
             ws_url, 
             on_message=StompWebsocket._on_message,
-            on_error=StompWebsocket._on_error,
             on_close=StompWebsocket._on_close,
             on_open=StompWebsocket._on_open,
             header=header,
         )
+
+        # Store the SSL options for use when starting the websocket app
         self.sslopt = sslopt
 
     def start(self, pub_node, topic):
+        """
+        Runs the websocket app forever using the services on a given PxGrid
+        publisher node and subscribing to a given topic.
+        """
         self.pub_node = pub_node
         self.topic = topic
         self.run_forever(sslopt=self.sslopt)
 
     def _send_stomp_command(self, command, headers):
+        """
+        Internal method to issue a STOMP command, such as CONNECT
+        or SUBSCRIBE, with the appropriate headers. Some STOMP commands
+        have body content as well, but for simplicity, this method
+        does not support STOMP body content.
+        """
 
         # The command text goes first, followed by a newline
         text = f"{command}\n"
@@ -49,6 +64,7 @@ class StompWebsocket(websocket.WebSocketApp):
         text += "\n\0"
 
         # Print status message so we can see the STOMP exchanges
+        # preceded by >>
         print(f">> {text}")
 
         # Very important to set BINARY mode with UTF-8 (buried in pxGrid docs)
@@ -59,37 +75,30 @@ class StompWebsocket(websocket.WebSocketApp):
     @staticmethod
     def _on_message(ws, message):
         """
-        Print all received messages preceeded by <<
+        Print all received messages preceded by <<
         """
         print(f"<< {message.decode('utf-8')}")
-
-    @staticmethod
-    def _on_error(ws, error):
-        """
-        Print all received errors  preceeded by <!
-        """
-        print(f"<! {error.decode('utf-8')}")
 
     @staticmethod
     def _on_close(ws):
         """
         Notify user that websocket is closed
         """
-        print("websocket closed")
+        print("** WEBSOCKET CLOSED")
 
     @staticmethod
     def _on_open(ws):
         """
         Notify user that websocket is open, then issue the appropriate STOMP
-        CONNECT and SUBSCRIBE commands
+        CONNECT and SUBSCRIBE commands. See spec for details:
+        https://stomp.github.io/stomp-specification-1.2.html
         """
-        print("websocket opened")
+        print("** WEBSOCKET CLOSED")
 
-        # https://stomp.github.io/stomp-specification-1.2.html
+        # Send the CONNECT command with the proper version and pub node
         connect_headers = {"accept-version": "1.2", "host": ws.pub_node}
         ws._send_stomp_command("CONNECT", connect_headers)
-        print("websocket CONNECT complete")
 
+        # Secnd the SUBSCRIBE command with the topic and conversation ID
         subscribe_headers = {"destination": ws.topic, "id": "0"}
         ws._send_stomp_command("SUBSCRIBE", subscribe_headers)
-        print("websocket SUBSCRIBE complete")

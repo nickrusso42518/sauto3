@@ -20,7 +20,15 @@ TOPIC_MAP = {
 }
 
 class PxGrid:
+    """
+    Represents an interaction to PxGrid for REST and websocket services.
+    """
+
     def __init__(self, ise_host, verify=False):
+        """
+        Creates a new object to a specific ISE host (IP or hostname) and
+        whether SSL certifications should be verified or not.
+        """
 
         # If verify is false, we should also disable SSL warnings (sandbox)
         self.verify = verify
@@ -32,7 +40,7 @@ class PxGrid:
         self.base_url = f"https://{ise_host}:8910/pxgrid/control"
         self.auth = None
 
-        # Define generic send/receive JSON headers for HTTP
+        # Define generic send/receive JSON headers for HTTP/REST
         self.http_headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -43,6 +51,8 @@ class PxGrid:
     #
 
     def req(self, resource, method="post", **kwargs):
+        """
+        """
 
         # All requests must have a JSON body, so if this wasn't
         # supplied, use an empty dict instead
@@ -152,20 +162,3 @@ class PxGrid:
             )
             # Start the ws app on a given node and subscribing to the proper topic
             self.ws.start(pub_node, topic)
-
-
-def main():
-    """
-    Execution begins here.
-    """
-
-    # Instantiate a new PxGrid object to the DevNet sandbox
-    pxgrid = PxGrid("10.10.20.70")
-
-    # Activate a new user for this integration
-    pxgrid.activate_user("globo_listen")
-    pxgrid.authorize_for_service("com.cisco.ise.radius", ws_subscribe=True)
-
-
-if __name__ == "__main__":
-    main()
