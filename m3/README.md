@@ -23,3 +23,17 @@ Construct Stealthwatch cloud API request for reporting
 Perform configuration modifications  using Stealthwatch APIs
 Generate rich reports using Stealthwatch APIs
 ```
+
+```
+{
+  "start_timestamp_utc__gt": "",
+  "start_timestamp_utc__lt": "",
+  "ip": "",
+  "connected_ip": "",
+  "port": "",
+  "connected_port": "",
+  "protocol": "",
+  "device_id": "",
+  "limit": ""
+}
+```
