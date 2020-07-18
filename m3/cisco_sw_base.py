@@ -31,22 +31,22 @@ class CiscoSWBase:
         # just by setting the "json" kwarg, requests sets the Content-Type.
         self.headers = {"Accept": "application/json"}
 
-    def base_req(self, url, method="get", **kwargs):
+    def req(self, resource, **kwargs):
         """
-        Describes the basic process to issue an HTTP request to a given
-        URL. The default method is "get" and the keyword arguments
-        are processed by the well-known request() method.
+        Issues a generic HTTP request to a given resource and with given
+        keyword arguments. Returns the body of the response, if it exists,
+        as Python objects.
         """
 
         # If headers were not supplied, use the default headers. Some
-        # requests have wildly different headers, so we cannot use
+        # requests have different headers (weird), so we cannot use
         # them all the time
         if "headers" not in kwargs:
             kwargs["headers"] = self.headers
 
         # Issue the generic HTTP request using the object's session attribute
         resp = self.sess.request(
-            url=url,
+            url=f"f{self.base_url}/{resource}",
             method=method,
             **kwargs,
         )
@@ -54,14 +54,10 @@ class CiscoSWBase:
         # If any errors occurred (status code >= 400), raise an HTTPError
         resp.raise_for_status()
 
-        # No errors occurred; return the entire response object
-        return resp
+        # If there is a body, it will be JSON; convert to Python objects
+        if resp.text:
+            # import json; print(json.dumps(resp.json(), indent=2))
+            return resp.json()
 
-    def req(self, resource, **kwargs):
-        """
-        Abstract method that children must implement. Will generally rely on
-        base_req() for the core logic with some additional input/output
-        processing as required for each product.
-        """
-
-        raise NotImplementedError("Abstract method that children must implement")
+        # Body was not present; return empty dict for consistency
+        return {}
