@@ -6,8 +6,8 @@ Purpose: Create a child WebSocketApp that is specific to PxGrid using
 STOMP to subscribe to a topic, printing each message as it arrives.
 """
 
-import websocket
 import time
+import websocket
 
 
 class StompWebsocket(websocket.WebSocketApp):
@@ -26,7 +26,7 @@ class StompWebsocket(websocket.WebSocketApp):
 
         # Call the base class constructor to handle the heavy lifting
         super().__init__(
-            ws_url, 
+            ws_url,
             on_message=StompWebsocket._on_message,
             on_close=StompWebsocket._on_close,
             on_open=StompWebsocket._on_open,
@@ -71,7 +71,6 @@ class StompWebsocket(websocket.WebSocketApp):
         self.send(text.encode("utf-8"), opcode=websocket.ABNF.OPCODE_BINARY)
         time.sleep(1)
 
-
     @staticmethod
     def _on_message(ws, message):
         """
@@ -90,7 +89,7 @@ class StompWebsocket(websocket.WebSocketApp):
     def _on_open(ws):
         """
         Notify user that websocket is open, then issue the appropriate STOMP
-        CONNECT and SUBSCRIBE commands. See spec for details:
+        CONNECT and SUBSCRIBE commands. See STOMP spec for details:
         https://stomp.github.io/stomp-specification-1.2.html
         """
         print("** WEBSOCKET OPEN")

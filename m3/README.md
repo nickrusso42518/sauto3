@@ -7,10 +7,11 @@ https://developer.cisco.com/docs/stealthwatch/enterprise
 https://developer.cisco.com/docs/stealthwatch/cloud
 ```
 
-Export the following environment variables before using the scripts in
-this directory to avoid any authentication problems.
+Export the following environment variables before using the `swc` scripts
+in this directory to avoid any authentication problems.
 ```
-export var=<your client ID>
+export SWC_EMAIL=<your Stealthwatch cloud registered email>
+export SWC_API_KEY=<your Stealthwatch cloud hexadecimal API key>
 ```
 
 The `data_ref/` directory contains example JSON responses from the
