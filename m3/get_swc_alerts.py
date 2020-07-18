@@ -27,7 +27,10 @@ def main():
     # Get the current SWC alerts (watchlist triggers, etc)
     alerts = swc.req("alerts/alert/")
     for alert in alerts["objects"]:
-        print(alert)
+
+        # Print a two-line summary including the time, type, and description
+        print(f"{alert['created']}: {alert['type']}")
+        print(f"Details: {alert['description']}\n")
 
 
 if __name__ == "__main__":
