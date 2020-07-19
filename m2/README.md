@@ -9,7 +9,3 @@ https://developer.cisco.com/docs/pxgrid
 
 The `data_ref/` directory contains example JSON responses from the
 various API calls used in the course, as well as sample logs/artifacts.
-
-```
-... create additional "query" scripts for endpoint device type and network policy
-```

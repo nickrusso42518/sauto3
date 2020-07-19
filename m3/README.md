@@ -10,30 +10,10 @@ https://developer.cisco.com/docs/stealthwatch/cloud
 Export the following environment variables before using the `swc` scripts
 in this directory to avoid any authentication problems.
 ```
-export SWC_EMAIL=<your Stealthwatch cloud registered email>
-export SWC_API_KEY=<your Stealthwatch cloud hexadecimal API key>
+export SWC_ACCOUNT=<your Stealthwatch Cloud URL identifier>
+export SWC_EMAIL=<your Stealthwatch Cloud registered email>
+export SWC_API_KEY=<your Stealthwatch Cloud hexadecimal API key>
 ```
 
 The `data_ref/` directory contains example JSON responses from the
 various API calls used in the course, as well as sample logs/artifacts.
-
-```
-Describe the capabilities and components of the Cisco Stealthwatch API
-Construct Stealthwatch cloud API request for reporting
-Perform configuration modifications  using Stealthwatch APIs
-Generate rich reports using Stealthwatch APIs
-```
-
-```
-{
-  "start_timestamp_utc__gt": "",
-  "start_timestamp_utc__lt": "",
-  "ip": "",
-  "connected_ip": "",
-  "port": "",
-  "connected_port": "",
-  "protocol": "",
-  "device_id": "",
-  "limit": ""
-}
-```

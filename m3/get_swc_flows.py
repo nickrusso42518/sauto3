@@ -16,7 +16,7 @@ SWC_EMAIL = "nickrus@cisco.com"
 SWC_API_KEY = "3c47285ded8b42ffa82c85b761fcc279"
 
 # Specify output directory for resulting flow files
-OUTDIR = "output_flows"
+OUTDIR = "swc_flows"
 
 
 def main():

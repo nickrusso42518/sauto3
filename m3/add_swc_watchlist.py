@@ -27,10 +27,10 @@ def main():
 
     # Assemble the generic parameters for each watchlist domain
     body = {
-      "reason": "Unauthorized DNS server for Globomantics",
-      "category": "domain",
-      "list_on": "blacklist",
-      "is_bidirectional": False,
+        "reason": "Unauthorized DNS server for Globomantics",
+        "category": "domain",
+        "list_on": "blacklist",
+        "is_bidirectional": False,
     }
 
     # Identify Google DNS IP addresses to watch

@@ -50,7 +50,7 @@ class CiscoSWEnterprise(CiscoSWBase):
             raise ValueError(f"tenant with name {tenant_name} not found")
 
     @staticmethod
-    def devnet_reservable(self):
+    def devnet_reservable():
         """
         Class-level method that returns an object referencing the DevNet
         reservable sandbox to make it easier for consumers.
@@ -71,6 +71,12 @@ class CiscoSWEnterprise(CiscoSWBase):
         resp = self.req("token/v2/authenticate", method="post", json=body)
         return resp
 
+    def logout(self):
+        """
+        For security reasons, delete the existing cookie to logout.
+        """
+        self.req("token", method="delete")
+
     def get_flows_from_ips(self, start_time, end_time, limit, source_ips):
         """
         Collect all flows from specific IP addresses in a given time period
@@ -88,10 +94,11 @@ class CiscoSWEnterprise(CiscoSWBase):
 
         # Construct the URL and issue the request, including the body
         flow_url = f"sw-reporting/v2/tenants/{self.tenant_id}/flows/queries"
-        data = self.req(url, method="post", json=body)
+        flow_resp = self.req(flow_url, method="post", json=body)
 
-        # Extract the query ID
-        query_id = resp["data"]["query"]["id"]
+        # Extract the query ID and print a status message
+        query_id = flow_resp["data"]["query"]["id"]
+        print(f"Performing flow query with id {query_id}")
 
         # Loop forever, waiting 5 seconds in between requests
         while True:
@@ -109,3 +116,40 @@ class CiscoSWEnterprise(CiscoSWBase):
         # Flow collection complete; return a list of dicts containing flows
         flows = self.req(f"{flow_url}/{query_id}/results")
         return flows["data"]["flows"]
+
+    def add_custom_event(self, event_body, enable=False):
+        """
+        Creates a new custom event for monitoring given a supplied
+        event body (dict) and whether to enable the event or not.
+        Returns the HTTP body data to confirm the event's creation
+        and possibly the event's enablement.
+        """
+
+        # Define the base URL for custom events, then issue POST request to add
+        event_url = f"smc-configuration/rest/v1/tenants/{self.tenant_id}/policy/customEvents"
+        add_resp = self.req(event_url, method="post", json=event_body)
+
+        # Extract the event ID for logging and/or use later
+        event_id = add_resp["data"]["customSecurityEvents"]["id"]
+        print(f"Added policy custom event with id {event_id}")
+
+        # If the event should remain disabled (default), return POST body
+        if not enable:
+            return add_resp
+
+        # We must enable the event; get the creation timestamp from POST data
+        timestamp = add_resp["data"]["customSecurityEvents"]["timestamp"]
+
+        # Issue HTTP PUT request to update the specific event. The body
+        # timestamp must match the POST response
+        en_body = {"timestamp": timestamp}
+        en_url = f"event_url/{event_id}/enable"
+        en_resp = self.req(en_url, method="put", json=en_body)
+
+        # Ensure the event is not enabled, raise an error
+        if not en_resp["data"]["customSecurityEvents"]["enabled"]:
+            raise ValueError("custom event not properly enabled")
+
+        # Event was correctly enabled; return PUT body
+        print(f"Enabled policy custom event with id {event_id}")
+        return en_resp
