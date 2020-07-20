@@ -62,7 +62,7 @@ class CiscoSWBase:
 
         # If there is a body, it will be JSON; convert to Python objects
         if resp.text:
-            import json; print(json.dumps(resp.json(), indent=2))
+            # import json; print(json.dumps(resp.json(), indent=2))
             return resp.json()
 
         # Body was not present; return empty dict for consistency

@@ -7,6 +7,7 @@ to simplify API interactions.
 """
 
 import time
+from datetime import datetime, timedelta
 from cisco_sw_base import CiscoSWBase
 
 
@@ -78,11 +79,20 @@ class CiscoSWEnterprise(CiscoSWBase):
         """
         self.req("token", method="delete")
 
-    def get_flows_from_ips(self, start_time, end_time, limit, source_ips):
+    def get_flows_from_ips(self, last_n_minutes, limit, source_ips):
         """
         Collect all flows from specific IP addresses in a given time period
         and up to a given limit.
         """
+
+        # Compute the current time and N minutes ago time
+        now = datetime.utcnow()
+        n_min_ago = now - timedelta(minutes=last_n_minutes)
+
+        # Format the strings in the proper format, eg 2020-07-16T12:03:00Z
+        start_time = n_min_ago.strftime("%Y-%m-%dT%H:%M:%SZ")
+        end_time = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        print(f"Flow query range: {start_time} to {end_time}")
 
         # Define HTTP body to start the flow query
         body = {
