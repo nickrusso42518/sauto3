@@ -14,7 +14,7 @@ class CiscoSWBase:
     Abstract base class for Cisco Stealthwatch security products.
     """
 
-    def __init__(self, host):
+    def __init__(self, host, verify=True):
         """
         Contains common logic when creating objects for any Cisco
         security product. The "base_url" is a string representing the
@@ -26,12 +26,17 @@ class CiscoSWBase:
         self.host = host
         self.sess = requests.session()
 
+        # If verify is false, we should also disable SSL warnings (sandbox)
+        self.verify = verify
+        if not self.verify:
+            requests.packages.urllib3.disable_warnings()
+
         # Sometimes common headers can be re-used over and over.
         # Content-Type not supplied because it isn't always JSON, and
         # just by setting the "json" kwarg, requests sets the Content-Type.
         self.headers = {"Accept": "application/json"}
 
-    def req(self, resource, **kwargs):
+    def req(self, resource, method="get", **kwargs):
         """
         Issues a generic HTTP request to a given resource and with given
         keyword arguments. Returns the body of the response, if it exists,
@@ -46,8 +51,9 @@ class CiscoSWBase:
 
         # Issue the generic HTTP request using the object's session attribute
         resp = self.sess.request(
-            url=f"f{self.base_url}/{resource}",
+            url=f"{self.base_url}/{resource}",
             method=method,
+            verify=self.verify,
             **kwargs,
         )
 
@@ -56,7 +62,7 @@ class CiscoSWBase:
 
         # If there is a body, it will be JSON; convert to Python objects
         if resp.text:
-            # import json; print(json.dumps(resp.json(), indent=2))
+            import json; print(json.dumps(resp.json(), indent=2))
             return resp.json()
 
         # Body was not present; return empty dict for consistency

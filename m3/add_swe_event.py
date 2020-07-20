@@ -23,9 +23,11 @@ def main():
     body = {
         "name": "Wired Brain Coffee",
         "description": "Detects suspicious app on the Globomantics network",
-        "subject": {"ipAddresses": {"includes": ["209.182.177.5"]}},
+        "subject": {
+            "ipAddresses": {"includes": ["209.182.177.5"]},
+            "orientation": "either",
+        },
         "peer": {"portProtocols": {"includes": ["43283/TCP"]}},
-        "orientation": "either",
     }
 
     # Add the event, enable it, and confirm it was enabled

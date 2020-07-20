@@ -15,7 +15,7 @@ class CiscoSWEnterprise(CiscoSWBase):
     Declaration of Cisco Stealthwatch Enterprise (SWE) SDK class.
     """
 
-    def __init__(self, smc_host, username, password, tenant_name):
+    def __init__(self, smc_host, username, password, tenant_name, verify=False):
         """
         Constructor to create a new object. SWE uses a username/password
         pair in an HTTP POST body to obtain a cookie, which is automatically
@@ -23,7 +23,7 @@ class CiscoSWEnterprise(CiscoSWBase):
         """
 
         # Retain the base URL and create a new, long-lived HTTP session
-        super().__init__(host=smc_host)
+        super().__init__(host=smc_host, verify=verify)
         self.username = username
         self.password = password
 
@@ -41,7 +41,7 @@ class CiscoSWEnterprise(CiscoSWBase):
         # Iterate over all tenants, storing the tenant ID if the
         # tenant exists somewhere in the list of tenants
         for tenant in tenants["data"]:
-            if tenant["name"].lower() == tenant_name.lower():
+            if tenant["displayName"].lower() == tenant_name.lower():
                 self.tenant_id = tenant["id"]
                 break
 
@@ -64,11 +64,12 @@ class CiscoSWEnterprise(CiscoSWBase):
         users manually when cookies expire.
         """
 
-        # Build the JSON body with the username and password for initial auth
+        # Build the key/value body with the username and password for auth
+        # This is NOT a JSON body, just web form data
         body = {"username": self.username, "password": self.password}
 
         # Issue an HTTP POST request with the body above and return response
-        resp = self.req("token/v2/authenticate", method="post", json=body)
+        resp = self.req("token/v2/authenticate", method="post", data=body)
         return resp
 
     def logout(self):
@@ -143,7 +144,7 @@ class CiscoSWEnterprise(CiscoSWBase):
         # Issue HTTP PUT request to update the specific event. The body
         # timestamp must match the POST response
         en_body = {"timestamp": timestamp}
-        en_url = f"event_url/{event_id}/enable"
+        en_url = f"{event_url}/{event_id}/enable"
         en_resp = self.req(en_url, method="put", json=en_body)
 
         # Ensure the event is not enabled, raise an error
