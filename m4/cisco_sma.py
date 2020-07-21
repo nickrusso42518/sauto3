@@ -52,6 +52,18 @@ class CiscoSMA:
         as Python objects.
         """
 
+        # Sloppy by necessary. "requests" automatically handles URL encoding
+        # of special characters, but SMA actually wants the raw ':'
+        # Manually assemble the query parameter string instead
+        if "params" in kwargs:
+
+            # Manually build the query string in k1=v1&k2=v2 format
+            qp_str = "&".join(f"{k}={v}" for k, v in kwargs["params"].items())
+            # print(qp_str)
+
+            # Reassign the params dict to the pre-made query params string
+            kwargs["params"] = qp_str
+
         # Issue the generic HTTP request using the object's session attribute
         resp = self.sess.request(
             url=f"{self.base_url}/{resource}",
