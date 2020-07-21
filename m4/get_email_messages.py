@@ -9,11 +9,14 @@ from cisco_sma import CiscoSMA
 
 
 def main():
+    """
+    Execution begins here.
+    """
 
     # Instantiate new CiscoSMA object using dCloud parameters
     sma = CiscoSMA()
 
-    # Query parameters to specify the scope of search. These timestampts were
+    # Query parameters to specify the scope of search. These timestamps were
     # specified in the documentation and (surprisingly) work well for testing
     params = {
         "startDate": "2018-01-01T00:00:00.000Z",
