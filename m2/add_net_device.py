@@ -22,10 +22,9 @@ def main():
     requests.packages.urllib3.disable_warnings()
 
     # The API path below is what the DevNet sandbox uses for API testing,
-    # which may change in the future. Be sure to check the IP address as
-    # I suspect this changes frequently. See here for more details:
+    # which may change in the future. See here for more details:
     # https://developer.cisco.com/docs/identity-services-engine
-    # You can access the API documentation at URL /ers/sdk
+    # You can access the API documentation at URL /ers/sdk#_
     api_path = "https://10.10.20.70:9060/ers"
     auth = ("admin", "C1sco12345!")
 
