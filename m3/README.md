@@ -8,7 +8,7 @@ https://developer.cisco.com/docs/stealthwatch/cloud
 ```
 
 Export the following environment variables before using the `swc` scripts
-in this directory to avoid any authentication problems.
+to avoid any authentication problems with Stealthwatch Cloud.
 ```
 export SWC_ACCOUNT=<your Stealthwatch Cloud URL identifier>
 export SWC_EMAIL=<your Stealthwatch Cloud registered email>
