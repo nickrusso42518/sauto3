@@ -138,26 +138,24 @@ class PxGrid:
         # Build the HTTP basic auth 2-tuple for future requests
         self.control_auth = (self.username, acct["password"])
 
-        # User creation successful; print status message
+        # User creation successful; print status message and wait for
+        # administrator to signal that user has been approved
         print(f"PxGrid user {username} created. Please approve via ISE UI")
+        self.control_req("AccountActivate")
+        input("Press <ENTER> to continue")
 
-        # Loop forever (or until otherwise broken)
-        while True:
-            activate = self.control_req("AccountActivate")
-            account_state = activate["accountState"].lower()
-            print(f"Account state: {account_state}")
+        # Issue the AccountActivate command and check the current state
+        activate = self.control_req("AccountActivate")
+        account_state = activate["accountState"].lower()
+        print(f"Account state: {account_state}")
 
-            # Test for different states. Enabled is good, disabled is bad
-            if account_state == "enabled":
-                break
-            elif account_state == "disabled":
-                raise ValueError(f"PxGrid user {username} disabled")
+        # Test for different states. Enabled is good, anything else is bad
+        if account_state != "enabled":
+            raise ValueError(f"PxGrid user {username} is {account_state}")
 
-            # Docs recommend waiting 60 seconds between requests; will use
-            # a smaller value to speed up testing
-            time.sleep(10)
-
+        # User was successfully activated; print status message
         print(f"PxGrid user {username} activated")
+
 
     def authorize_for_service(self, service, ws_subscribe=False):
         """
