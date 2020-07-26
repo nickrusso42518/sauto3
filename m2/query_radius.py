@@ -21,7 +21,7 @@ def main(service):
 
     # Activate a new user for this integration
     pxgrid.activate_user("globo_query")
-    pxgrid.authorize_for_service(service, ws_subscribe=False)
+    pxgrid.authorize_for_service(service)
 
     radius_failures = pxgrid.service_req("getFailures")
     for failure in radius_failures["failures"]:
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # User must supply a CLI argument of the service for subscription
     if len(sys.argv) < 2:
-        print("usage: python query_service.py <service>")
+        print("usage: python query_radius.py <service>")
         sys.exit(1)
 
     # Pass the service into main() for submission. Example:
