@@ -200,20 +200,19 @@ class PxGrid:
 
             # Manually build the HTTP basic auth base 64 encoded string,
             # since websockets isn't as user-friendly as requests
-            b64 = b64encode(
-                (f"{self.username}:{self.secret}").encode()
-            ).decode()
+            b64 = b64encode(f"{self.username}:{self.secret}".encode()).decode()
 
             # Create the websocket headers and URL for use with STOMP later
-            self.ws_headers = {"Authorization": f"Basic {b64}"}
-            self.ws_url = serv_resp["properties"]["wsUrl"]
+            ws_headers = {"Authorization": f"Basic {b64}"}
+            ws_url = serv_resp["properties"]["wsUrl"]
 
             # Connect to ISE using a websocket
             self.ws = StompWebsocket(
-                self.ws_url,
+                ws_url=ws_url,
+                header=ws_headers,
                 sslopt={"cert_reqs": ssl.CERT_NONE},
-                header=self.ws_headers,
             )
+
             # Start the ws app on a given node and subscribing to the proper topic
             self.ws.start(pub_node, topic)
 

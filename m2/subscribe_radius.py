@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     # User must supply a CLI argument of the service for subscription
     if len(sys.argv) < 2:
-        print("usage: python subscribe_service.py <service>")
+        print("usage: python subscribe_radius.py <service>")
         sys.exit(1)
 
     # Pass the service into main() for submission. Example:
