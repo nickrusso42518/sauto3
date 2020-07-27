@@ -17,9 +17,8 @@ class CiscoSWBase:
     def __init__(self, host, verify=True):
         """
         Contains common logic when creating objects for any Cisco
-        security product. The "base_url" is a string representing the
-        first half of any request as individual resources can be
-        appended for each request.
+        security product. The "host" is a string representing the
+        host to connect to, but the base URLs will be product-specific.
         """
 
         # Retain supplied host and create a new, long-lived HTTP session

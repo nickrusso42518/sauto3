@@ -128,46 +128,6 @@ class CiscoSWEnterprise(CiscoSWBase):
         flows = self.req(f"{flow_url}/{query_id}/results")
         return flows["data"]["flows"]
 
-    def add_custom_event(self, event_body, enable=False):
-        """
-        Creates a new custom event for monitoring given a supplied
-        event body (dict) and whether to enable the event or not.
-        Returns the HTTP body data to confirm the event's creation
-        and possibly the event's enablement.
-        """
-
-        # Define the base URL for custom events, then issue POST request to add
-        event_url = (
-            "smc-configuration/rest/v1/tenants/"
-            f"{self.tenant_id}/policy/customEvents"
-        )
-        add_resp = self.req(event_url, method="post", json=event_body)
-
-        # Extract the event ID for logging and/or use later
-        event_id = add_resp["data"]["customSecurityEvents"]["id"]
-        print(f"Added policy custom event with id {event_id}")
-
-        # If the event should remain disabled (default), return POST body
-        if not enable:
-            return add_resp
-
-        # We must enable the event; get the creation timestamp from POST data
-        timestamp = add_resp["data"]["customSecurityEvents"]["timestamp"]
-
-        # Issue HTTP PUT request to update the specific event. The body
-        # timestamp must match the POST response
-        en_body = {"timestamp": timestamp}
-        en_url = f"{event_url}/{event_id}/enable"
-        en_resp = self.req(en_url, method="put", json=en_body)
-
-        # Ensure the event is not enabled, raise an error
-        if not en_resp["data"]["customSecurityEvents"]["enabled"]:
-            raise ValueError("custom event not properly enabled")
-
-        # Event was correctly enabled; return PUT body
-        print(f"Enabled policy custom event with id {event_id}")
-        return en_resp
-
 
 if __name__ == "__main__":
 
