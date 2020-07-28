@@ -16,7 +16,7 @@ def main():
     # Access the SWE sandbox and collect flows from a specific IP
     swe = CiscoSWEnterprise.devnet_reservable()
     flows = swe.get_flows_from_ips(
-        last_n_minutes=30, limit=20, source_ips=["209.182.177.5"]
+        last_n_minutes=30, limit=20, source_ips=[]
     )
 
     # Create the column names for the CSV file
