@@ -26,4 +26,4 @@ if __name__ == "__main__":
 
     # Send the Netflow packet to the FlowCollector on port 2055 (v5 default)
     # The utun2 interface is my personal VPN interface; yours may vary
-    send(IP(dst="10.10.20.61") / UDP(dport=2055) / netflow, iface="utun2")
+    send(IP(dst="10.10.20.61") / UDP(dport=2055) / netflow, iface="tun0")
