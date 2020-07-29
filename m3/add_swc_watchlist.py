@@ -8,22 +8,14 @@ domain entries. This will generate alerts when matching traffic is seen.
 
 from cisco_sw_cloud import CiscoSWCloud
 
-# Quick and dirty approach for variable inputs; update these
-# with your account handle, personal SWC email address, and API key
-SWC_ACCOUNT = "cisco-nickrus"
-SWC_EMAIL = "nickrus@cisco.com"
-SWC_API_KEY = "3c47285ded8b42ffa82c85b761fcc279"
-
 
 def main():
     """
     Execution starts here.
     """
 
-    # Create new SWC object
-    swc = CiscoSWCloud(
-        account_name=SWC_ACCOUNT, email=SWC_EMAIL, api_key=SWC_API_KEY
-    )
+    # Create new SWC object from environment variables
+    swc = CiscoSWCloud.build_from_env_vars()
 
     # Assemble the generic parameters for each watchlist domain
     body = {

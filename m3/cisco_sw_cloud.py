@@ -6,6 +6,7 @@ Purpose: Create a mini-SDK around Cisco Stealthwatch Cloud
 to simplify API interactions.
 """
 
+import os
 from cisco_sw_base import CiscoSWBase
 
 
@@ -31,20 +32,29 @@ class CiscoSWCloud(CiscoSWBase):
         # Update the headers dictionary with the authorization header
         self.headers["Authorization"] = f"ApiKey {email}:{api_key}"
 
-    def req(self, resource, **kwargs):
+    @staticmethod
+    def build_from_env_vars():
         """
-        Describes the basic process to issue an HTTP request to a given
-        URL. The default method is "get" and the keyword arguments
-        are processed by the well-known request() method.
+        Static class-level helper method to quickly create a new
+        CiscoSWCloud object using environment variables:
+          1. SWC_ACCOUNT: your Stealthwatch Cloud URL identifier
+          2. SWC_EMAIL: your Stealthwatch Cloud registered email
+          3. SWC_API_KEY: your Stealthwatch Cloud hexadecimal API key
         """
 
-        # Call the base_req method with the full URL and other kwargs
-        resp = super().base_req(f"{self.base_url}/{resource}", **kwargs)
+        # Trivial, copy/paste approach to load variables
+        # For a more dynamic approach, see "endpoint security" course
+        account_name = os.environ.get("SWC_ACCOUNT")
+        if not account_name:
+            raise ValueError("Env var SWC_ACCOUNT not specified")
 
-        # If there is a body, it will be JSON; convert to Python objects
-        if resp.text:
-            # import json; print(json.dumps(resp.json(), indent=2))
-            return resp.json()
+        email = os.environ.get("SWC_EMAIL")
+        if not email:
+            raise ValueError("Env var SWC_EMAIL not specified")
 
-        # Body was not present; return empty dict for consistency
-        return {}
+        api_key = os.environ.get("SWC_API_KEY")
+        if not api_key:
+            raise ValueError("Env var SWC_API_KEY not specified")
+
+        # Return new SWC object based on these env vars
+        return CiscoSWCloud(account_name, email, api_key)
