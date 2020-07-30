@@ -22,8 +22,6 @@ def main():
     # Create new SWC object from environment variables
     swc = CiscoSWCloud.build_from_env_vars()
 
-    import pdb; pdb.set_trace()
-
     # Load in the query param dicts from JSON file
     with open("flow_query_params.json", "r") as handle:
         flow_queries = json.load(handle)
