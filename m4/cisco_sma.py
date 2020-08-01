@@ -52,7 +52,7 @@ class CiscoSMA:
         as Python objects.
         """
 
-        # Sloppy by necessary. "requests" automatically handles URL encoding
+        # Sloppy but necessary. "requests" automatically handles URL encoding
         # of special characters, but SMA actually wants the raw ':'
         # Manually assemble the query parameter string instead
         if "params" in kwargs:
